@@ -1,21 +1,15 @@
 <template>
-  <div id="map" />
+  <div id="map" class="h-100 w-100" />
 </template>
 
-<script>
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator';
 import { createMap } from './../controllers/leafletMap';
 
-export default {
-  name: 'LeafletMap',
+@Component
+export default class LeafletMap extends Vue {
   mounted() {
     createMap();
-  },
-};
-</script>
-
-<style>
-#map {
-  height: 100%;
-  width: 100%;
+  }
 }
-</style>
+</script>

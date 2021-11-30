@@ -36,23 +36,37 @@ export function createMap() {
   // @todo: Use VUE routes
 
   const vars = getUrlVars();
-  const lat = vars.lat || 35.681236;
-  const lng = vars.lng || 139.767125;
-  const zoom = vars.zoom || 2;
+  const lat = vars.lat || import.meta.env.VITE_MAP_DEFAULT_LATITUDE;
+  const lng = vars.lng || import.meta.env.VITE_MAP_DEFAULT_LONGITUDE;
+  const zoom = vars.zoom || import.meta.env.VITE_MAP_DEFAULT_ZOOM;
 
   map = L.map('map').setView([lat, lng], zoom);
 
-  L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-    attribution:
-      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-    subdomains: 'abcd',
-    maxZoom: 19,
-  }).addTo(map);
+  L.tileLayer(
+    import.meta.env.VITE_MAP_TILE_ZXY_URI ||
+      'http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+    {
+      attribution:
+        import.meta.env.VITE_MAP_ATTRIBUTION ||
+        '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+      subdomains: import.meta.env.VITE_MAP_SUBDOMAINS,
+      maxZoom: import.meta.env.VITE_MAP_MAX_ZOOM,
+      crs: L.CRS.Simple,
+    }
+  ).addTo(map);
 
+  /*
+  if (import.meta.env.VITE_MAP_IS_RASTER) {
+    var extent = import.meta.env.VITE_MAP_EXTENT;
+    map.setMaxBounds(
+      new L.LatLngBounds([extent[0], extent[1]], [extent[2], extent[3]])
+    );
+  }
+  */
   drawnItems = L.geoJSON(null, {
-    style: function () {
+    style() {
       return {
-        color: '#666C79',
+        color: '#007bff',
       };
     },
   }).addTo(map);

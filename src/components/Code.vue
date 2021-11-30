@@ -7,7 +7,8 @@
   />
 </template>
 
-<script>
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator';
 import { modifyGeoJSON } from '../controllers/leafletMap';
 import { codemirror } from 'vue-codemirror';
 import 'codemirror/addon/selection/active-line.js';
@@ -15,81 +16,74 @@ import 'codemirror/mode/javascript/javascript.js';
 
 import lint from '@mapbox/geojsonhint';
 
-export default {
-  name: 'CodeArea',
+@Component({
   components: {
     codemirror,
   },
-  data() {
-    return {
-      errorLines: [],
-      requiresParseFixing: false,
-      errors: {},
-      cmOptions: {
-        tabSize: 2,
-        cursorScrollMargin: 50,
-        mode: 'text/javascript',
-        styleActiveLine: true,
-        lineNumbers: true,
-        line: true,
-      },
-    };
-  },
-  computed: {
-    code: function () {
-      return this.$store.state.geojsonString;
-    },
-  },
-  methods: {
-    onCmCodeChange(newGeojsonString) {
-      this.cleanErrorMarks();
+})
+/** Code Component */
+export default class CodeArea extends Vue {
+  errorLines = [];
+  requiresParseFixing = false;
+  errors = [];
+  cmOptions = {
+    tabSize: 2,
+    cursorScrollMargin: 50,
+    mode: 'text/javascript',
+    styleActiveLine: true,
+    lineNumbers: true,
+    line: true,
+  };
 
-      this.errorLines = [];
+  get code() {
+    return this.$store.state.geojsonString;
+  }
 
-      this.errors = lint.hint(newGeojsonString);
+  onCmCodeChange(newGeojsonString: string) {
+    this.cleanErrorMarks();
 
-      this.errors.forEach(err => {
-        if (err.message.startsWith('Parse error')) {
-          this.$store.commit('setRequiresParsingFix', true);
-        } else if (err.message.startsWith('Polygons and MultiPolygons')) {
-          this.$store.commit('setRequiresWindingOrderFix', true);
-        } else {
-          this.$store.commit('setRequiresParsingFix', false);
-        }
-        this.errorLines.push(err.line);
-      }, this);
+    this.errorLines = [];
 
-      if (this.errors.length === 0) {
-        const newGeoJSON = JSON.parse(newGeojsonString);
-        modifyGeoJSON(newGeoJSON);
-        this.$store.commit('setGeoJSON', newGeoJSON);
+    this.errors = lint.hint(newGeojsonString);
+
+    this.errors.forEach(err => {
+      if (err.message.startsWith('Parse error')) {
+        this.$store.commit('setRequiresParsingFix', true);
+      } else if (err.message.startsWith('Polygons and MultiPolygons')) {
+        this.$store.commit('setRequiresWindingOrderFix', true);
+      } else {
+        this.$store.commit('setRequiresParsingFix', false);
       }
-      this.markErrors();
-    },
-    markErrors() {
-      this.errors.forEach(function (err) {
-        this.$refs.myCm.codemirror.doc.addLineClass(
-          err.line + 1,
-          'gutter',
-          'geojsonError'
-        );
-      }, this);
-    },
-    cleanErrorMarks() {
-      this.errorLines.forEach(line => {
-        this.$refs.myCm.codemirror.doc.removeLineClass(
-          line + 1,
-          'gutter',
-          'geojsonError'
-        );
-      }, this);
-      this.$store.commit('clearRequiresFixes');
-    },
-  },
-};
+      this.errorLines.push(err.line);
+    }, this);
+
+    if (this.errors.length === 0) {
+      const newGeoJSON = JSON.parse(newGeojsonString);
+      modifyGeoJSON(newGeoJSON);
+      this.$store.commit('setGeoJSON', newGeoJSON);
+    }
+    this.markErrors();
+  }
+
+  markErrors() {
+    const cm = (this.$refs.myCm as any).codemirror;
+    this.errors.forEach(err => {
+      cm.doc.addLineClass(err.line + 1, 'gutter', 'geojsonError');
+    }, this);
+  }
+  cleanErrorMarks() {
+    const cm = (this.$refs.myCm as any).codemirror;
+    this.errorLines.forEach(line => {
+      cm.doc.removeLineClass(line + 1, 'gutter', 'geojsonError');
+    }, this);
+    this.$store.commit('clearRequiresFixes');
+  }
+}
 </script>
 
 <style lang="scss">
+/** stylelint-disable */
+
 // Bootstrap and its default variables
 @import '../node_modules/bootstrap/scss/bootstrap';
 // BootstrapVue and its default variables
@@ -105,7 +99,7 @@ export default {
 /* BASICS */
 
 .CodeMirror {
-  height: auto; // Set height, width, borders, and global font properties here
+  height: calc(100vh - 100px);
   font-family: $font-family-monospace;
   direction: ltr; // berow Copy from bootstrap's .form-control
   display: block;
@@ -157,6 +151,7 @@ export default {
 }
 
 .CodeMirror-linenumbers {
+  color: $gray-100;
 }
 
 .CodeMirror-linenumber {
@@ -223,10 +218,6 @@ export default {
 }
 
 /* Can style cursor different in overwrite (non-insert) mode */
-
-.CodeMirror-overwrite .CodeMirror-cursor {
-  //
-}
 
 .cm-tab {
   display: inline-block;

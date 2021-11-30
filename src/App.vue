@@ -6,35 +6,36 @@
         <Map />
       </div>
       <div class="float-right w-50 h-100">
-        <Sidebar />
+        <code-area />
       </div>
     </main>
-
-    <footer class="footer mt-auto py-3 bg-light">
-      <div class="container">
-        <Properties />
-      </div>
-    </footer>
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator';
+
 import Map from './components/Map.vue';
 import NaviBar from './components/NaviBar.vue';
-import Sidebar from './components/Sidebar.vue';
+import CodeArea from './components/Code.vue';
 import Properties from './components/Properties.vue';
 
 import rewind from '@turf/rewind';
 
-export default {
+@Component({
   components: {
     Map,
     NaviBar,
-    Sidebar,
+    CodeArea,
     Properties,
   },
-  mounted: function () {
-    const params = new URL(document.location).searchParams;
+})
+export default class App extends Vue {
+  beforeCreate() {
+    document.title = import.meta.env.VITE_APP_TITLE;
+  }
+  mounted() {
+    const params = new URL(document.location.href).searchParams;
     const data = params.get('data');
     if (data) {
       const prettyGeojsonString = JSON.stringify(JSON.parse(data), null, 2);
@@ -42,6 +43,6 @@ export default {
       const newGeojson = rewind(this.$store.getters.geojson);
       this.$store.commit('setGeoJSON', newGeojson);
     }
-  },
-};
+  }
+}
 </script>
