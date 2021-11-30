@@ -1,0 +1,8 @@
+extends:
+  - stylelint-config-html/vue
+  - stylelint-config-standard
+  - stylelint-config-recommended-scss
+  - stylelint-config-recommended-vue
+rules: {
+  selector-class-pattern: off
+}
