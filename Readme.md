@@ -6,4 +6,4 @@ inspired from rowanwins's [geojson-editor](https://github.com/rowanwins/geojson-
 
 ## LICENSE
 
-MT
+MIT

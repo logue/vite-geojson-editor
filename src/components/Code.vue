@@ -82,7 +82,7 @@ export default class CodeArea extends Vue {
 </script>
 
 <style lang="scss">
-/** stylelint-disable */
+/* stylelint-disable */
 
 // Bootstrap and its default variables
 @import '../node_modules/bootstrap/scss/bootstrap';

@@ -21,26 +21,22 @@ let drawnItems = null;
 let map = null;
 
 export function createMap() {
-  function getUrlVars() {
-    const ret = {};
-    window.location.href.replace(
-      /[?&]+([^=&]+)=([^&]*)/gi,
-      function (m, key, value) {
-        ret[key] = value;
-      }
-    );
-    return ret;
-  }
-
   // A hack to quickly look for starting location
   // @todo: Use VUE routes
 
-  const vars = getUrlVars();
-  const lat = vars.lat || import.meta.env.VITE_MAP_DEFAULT_LATITUDE;
-  const lng = vars.lng || import.meta.env.VITE_MAP_DEFAULT_LONGITUDE;
-  const zoom = vars.zoom || import.meta.env.VITE_MAP_DEFAULT_ZOOM;
+  const vars = () => {
+    const ret = {
+      lat: import.meta.env.VITE_MAP_DEFAULT_LATITUDE || 0,
+      lng: import.meta.env.VITE_MAP_DEFAULT_LONGITUDE || 0,
+      zoom: import.meta.env.VITE_MAP_DEFAULT_ZOOM || 0,
+    };
+    window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (m, key, value) => {
+      ret[key] = value;
+    });
+    return ret;
+  };
 
-  map = L.map('map').setView([lat, lng], zoom);
+  map = L.map('map').setView([vars().lat, vars().lng], vars().zoom);
 
   L.tileLayer(
     import.meta.env.VITE_MAP_TILE_ZXY_URI ||
@@ -49,20 +45,26 @@ export function createMap() {
       attribution:
         import.meta.env.VITE_MAP_ATTRIBUTION ||
         '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-      subdomains: import.meta.env.VITE_MAP_SUBDOMAINS,
-      maxZoom: import.meta.env.VITE_MAP_MAX_ZOOM,
+      subdomains: import.meta.env.VITE_MAP_SUBDOMAINS || 'abcd',
+      maxZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 19,
+      minZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 0,
       crs: L.CRS.Simple,
     }
   ).addTo(map);
 
   /*
-  if (import.meta.env.VITE_MAP_IS_RASTER) {
-    var extent = import.meta.env.VITE_MAP_EXTENT;
+  if (import.meta.env.VITE_MAP_BOUNDING) {
     map.setMaxBounds(
-      new L.LatLngBounds([extent[0], extent[1]], [extent[2], extent[3]])
+      new L.LatLngBounds(
+        // South-West
+        [VITE_MAP_EXTENT_MAX_LATITUDE, VITE_MAP_EXTENT_MIN_LONGITUDE],
+        // North-East
+        [VITE_MAP_EXTENT_MIN_LATITUDE, VITE_MAP_EXTENT_MAX_LONGITUDE]
+      )
     );
   }
   */
+
   drawnItems = L.geoJSON(null, {
     style() {
       return {
@@ -92,34 +94,34 @@ export function createMap() {
 
   map.on('click', clickHandlerForMap);
 
-  map.on(L.Draw.Event.DRAWSTART, function (event) {
+  map.on('mousemove', e => {
+    document.getElementById('coordinate').innerText = e.latlng.toString();
+  });
+
+  map.on(L.Draw.Event.DRAWSTART, event => {
     map.off('click', clickHandlerForMap);
   });
 
-  map.on(L.Draw.Event.DRAWSTOP, function () {
+  map.on(L.Draw.Event.DRAWSTOP, () => {
     map.on('click', clickHandlerForMap);
   });
 
-  map.on(L.Draw.Event.CREATED, function (event) {
+  map.on(L.Draw.Event.CREATED, event => {
     drawnItems.addLayer(event.layer);
-    parseGeoJSONAndSendToStore(drawnItems.toGeoJSON());
+    store.commit('setGeoJSON', drawnItems.toGeoJSON());
   });
 
-  map.on(L.Draw.Event.EDITED, function () {
-    parseGeoJSONAndSendToStore(drawnItems.toGeoJSON());
+  map.on(L.Draw.Event.EDITED, () => {
+    store.commit('setGeoJSON', drawnItems.toGeoJSON());
   });
 
-  map.on(L.Draw.Event.DELETED, function () {
-    parseGeoJSONAndSendToStore(drawnItems.toGeoJSON());
+  map.on(L.Draw.Event.DELETED, () => {
+    store.commit('setGeoJSON', drawnItems.toGeoJSON());
   });
 }
 
 function clickHandlerForMap() {
   store.commit('setSelectedProperties', null);
-}
-
-function parseGeoJSONAndSendToStore(geojson) {
-  store.commit('setGeoJSON', geojson);
 }
 
 function openPopup(e) {

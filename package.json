@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "prettier --check src && eslint --cache src --ext js,json,ts,vue",
+    "lint": "prettier --check src && eslint --cache src --ext js,json,ts,vue --fix",
     "lint:style": "stylelint --cache src/**/*.{css,scss,vue}",
     "serve": "vite preview",
     "prepare": "husky install"
@@ -31,9 +31,11 @@
     "@turf/flatten": "^6.5.0",
     "@turf/random": "^6.5.0",
     "@turf/rewind": "^6.5.0",
+    "axios": "^0.24.0",
     "bootstrap": "4.6.1",
     "bootstrap-vue": "^2.21.2",
     "file-saver": "^2.0.5",
+    "filesaver": "^0.0.13",
     "leaflet": "^1.7.1",
     "leaflet-draw": "^1.0.4",
     "leaflet-rastercoords": "^1.0.4",
