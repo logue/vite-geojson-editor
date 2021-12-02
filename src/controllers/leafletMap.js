@@ -94,10 +94,6 @@ export function createMap() {
 
   map.on('click', clickHandlerForMap);
 
-  map.on('mousemove', e => {
-    document.getElementById('coordinate').innerText = e.latlng.toString();
-  });
-
   map.on(L.Draw.Event.DRAWSTART, event => {
     map.off('click', clickHandlerForMap);
   });
@@ -118,6 +114,25 @@ export function createMap() {
   map.on(L.Draw.Event.DELETED, () => {
     store.commit('setGeoJSON', drawnItems.toGeoJSON());
   });
+
+  map.on('mousemove', e => {
+    document.getElementById('coordinate').innerText = e.latlng.toString();
+  });
+}
+
+let lastSelectedFeature = null;
+
+function highlightSelectedFeature() {
+  lastSelectedFeature.setStyle({
+    color: '#ffc107',
+  });
+}
+
+function resetStyleOfPreviousSelection() {
+  if (lastSelectedFeature === null) return;
+  lastSelectedFeature.setStyle({
+    color: '#666C79',
+  });
 }
 
 function clickHandlerForMap() {
@@ -126,7 +141,10 @@ function clickHandlerForMap() {
 
 function openPopup(e) {
   L.DomEvent.stop(e);
-  store.commit('setSelectedProperties', e.target.feature.properties);
+  resetStyleOfPreviousSelection();
+  lastSelectedFeature = e.target;
+  highlightSelectedFeature();
+  store.commit('setSelectedProperties', lastSelectedFeature.feature);
 }
 
 export function zoomToFeatures() {
@@ -137,7 +155,7 @@ export function modifyGeoJSON(newGeoJSON) {
   drawnItems.clearLayers();
   drawnItems.addData(newGeoJSON);
 
-  drawnItems.eachLayer(function (layer) {
+  drawnItems.eachLayer(layer => {
     layer.on('click', openPopup);
   });
 }

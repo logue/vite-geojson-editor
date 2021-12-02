@@ -17,7 +17,7 @@
         </b-dropdown-item>
       </b-nav-item-dropdown>
       <b-nav-item-dropdown text="Tools" right>
-        <b-dropdown-item @click="$store.dispatch('randomFeatures')">
+        <b-dropdown-item @click="pointsModalOpen = !pointsModalOpen">
           Create Random Points
         </b-dropdown-item>
         <b-dropdown-item @click="zoomTo">Zoom to Features</b-dropdown-item>
@@ -26,20 +26,9 @@
         </b-dropdown-item>
       </b-nav-item-dropdown>
       <b-nav-form class="mx-3">
-        <b-button @click="loadDataModal = !loadDataModal" class="mr-3" disabled>
+        <b-button class="mr-3" @click="loadDataModal = !loadDataModal">
           Load from URL
         </b-button>
-        <b-modal
-          v-model="loadDataModal"
-          title="Load from URL"
-          @ok="saveInFormats"
-        >
-          <b-form-input
-            v-model="remoteUrl"
-            placeholder="Url of geojson"
-            required
-          />
-        </b-modal>
         <b-dropdown right text="Save" variant="primary">
           <b-dropdown-item
             v-for="format in supportedFormats"
@@ -55,12 +44,53 @@
       <b-nav-item href="https://github.com/logue/vite-geojson-editor">
         <b-icon icon="github" aria-hidden="false" />
       </b-nav-item>
+      <template v-if="githubClientId">
+        <b-nav-item
+          v-if="githubUsername === null && !loadingGithubUser"
+          @click="signin"
+        >
+          Sign in
+        </b-nav-item>
+        <b-nav-item v-else>
+          <b-avatar :src="githubImage" :text="githubUsername" />
+        </b-nav-item>
+      </template>
     </b-navbar-nav>
+    <b-modal v-model="loadDataModal" title="Load from URL" @ok="loadFromUrl">
+      <b-form-input v-model="remoteUrl" placeholder="Url of geojson" required />
+    </b-modal>
+    <b-modal
+      v-model="pointsModalOpen"
+      title="Number of points to create"
+      @ok="createRandomPoints"
+    >
+      <b-form-group
+        label="Number of points to create"
+        label-for="numberOfPoints"
+      >
+        <b-form-input
+          id="numberOfPoints"
+          v-model="numberOfPoints"
+          type="number"
+          placeholder="10"
+          required
+        />
+      </b-form-group>
+      <b-form-group label="Bounding box" label-for="bbox">
+        <b-form-input
+          id="bbox"
+          v-model="bbox"
+          type="text"
+          placeholder="-180, -90, 180, 90"
+          required
+        />
+      </b-form-group>
+    </b-modal>
   </b-navbar>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import FileSaver from 'file-saver';
 import { topology } from 'topojson-server';
 import wkt from 'wellknown';
@@ -68,6 +98,7 @@ import shape from 'shp-write';
 import axios from 'axios';
 import lint from '@mapbox/geojsonhint';
 import { zoomToFeatures } from '../controllers/leafletMap';
+import { randomPoint } from '@turf/random';
 
 @Component
 /** HelloWorld Component */
@@ -76,9 +107,31 @@ export default class NaviBar extends Vue {
   creatingGist = false;
   remoteUrl = '';
 
-  get hasGhAccessToken() {
+  pointsModalOpen = false;
+  numberOfPoints = 10;
+  bbox = '-180, -90, 180, 90';
+
+  @Prop()
+  loadingGithubUser = false;
+
+  get githubClientId() {
+    return import.meta.env.VITE_GITHUB_CLIENT_ID;
+  }
+
+  get githubAccessToken() {
     return this.$store.state.githubAccessToken !== null;
   }
+  get githubUsername() {
+    return this.$store.state.githubUsername === null
+      ? null
+      : this.$store.state.githubUsername.login;
+  }
+  get githubImage() {
+    return this.$store.state.githubUsername === null
+      ? null
+      : this.$store.state.githubUsername.avatar_url;
+  }
+
   get doesntRequireParseFixing() {
     return !this.$store.state.requiresParseFixing;
   }
@@ -111,12 +164,24 @@ export default class NaviBar extends Vue {
       {
         label: 'Github Gist',
         value: 'gist',
-        disabled: !this.hasGhAccessToken,
+        disabled: !this.githubAccessToken,
       },
     ];
   }
+
   zoomTo() {
     zoomToFeatures();
+  }
+
+  createRandomPoints() {
+    if (this.bbox.split(',').length - 1 !== 3) this.bbox = '-180, -90, 180, 90';
+    const newPoints = randomPoint(this.numberOfPoints, {
+      bbox: JSON.parse('[' + this.bbox + ']'),
+    });
+    this.$store.commit('setGeoJSON', {
+      type: 'FeatureCollection',
+      features: this.currentGeojson.features.concat(newPoints.features),
+    });
   }
 
   async loadFromUrl() {
@@ -124,7 +189,6 @@ export default class NaviBar extends Vue {
       const response = await axios.get(this.remoteUrl);
       const errors = lint.hint(response.data);
 
-      console.log(errors);
       let hadParsingError = false;
       errors.forEach(err => {
         if (err.message.startsWith('Parse error')) {
@@ -137,7 +201,6 @@ export default class NaviBar extends Vue {
           {
             title: 'Could not parse geojson',
             variant: 'warning',
-            solid: true,
           }
         );
 
@@ -148,21 +211,22 @@ export default class NaviBar extends Vue {
     } catch (error) {
       this.$bvToast.toast('File could not be retrieved from specified url', {
         title: 'Could not retrieve file',
-        variant: 'error',
-        solid: true,
+        variant: 'danger',
       });
     }
   }
+
   saveToGeojson() {
     const file = new File(
       [this.$store.state.geojsonString],
       'exported.geojson',
       {
-        type: 'text/plain;charset=utf-8',
+        type: 'application/geo+json;charset=utf-8',
       }
     );
     FileSaver.saveAs(file);
   }
+
   async createShare() {
     this.creatingGist = true;
     const response = await this.createGist();
@@ -176,10 +240,18 @@ export default class NaviBar extends Vue {
       this.$bvToast.toast('Share copied to clipboard', {
         title: 'Share',
         variant: 'success',
-        solid: true,
       });
     });
   }
+
+  async signin() {
+    window.open(
+      `https://github.com/login/oauth/authorize?client_id=${this.githubClientId}&scope=gist,read:user`,
+      'oauth',
+      `height=400,width=600`
+    );
+  }
+
   createGist() {
     const that = this;
     return axios({
@@ -200,6 +272,7 @@ export default class NaviBar extends Vue {
       },
     });
   }
+
   async saveInFormats(e) {
     let outData = null;
     const outName = e;
@@ -217,9 +290,7 @@ export default class NaviBar extends Vue {
     if (e === 'wkt') {
       outData = wkt.stringify({
         type: 'GeometryCollection',
-        geometries: this.$store.getters.geojson.features.map(function (f) {
-          return f.geometry;
-        }),
+        geometries: this.$store.getters.geojson.features.map(f => f.geometry),
       });
     }
     if (e === 'shp') {

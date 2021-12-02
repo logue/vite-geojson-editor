@@ -19,6 +19,8 @@ interface ImportMetaEnv {
   /** Default Zoom */
   readonly VITE_MAP_DEFAULT_ZOOM: number;
 
+  readonly VITE_GITHUB_ACCESS_TOKEN: string;
+
   /** Map tile server uri (https:// ... /{z}/{x}/{y}.png) */
   readonly VITE_MAP_TILE_ZXY_URI: string;
   /** Map Attributions */

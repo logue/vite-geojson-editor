@@ -99,7 +99,7 @@ export default class CodeArea extends Vue {
 /* BASICS */
 
 .CodeMirror {
-  height: calc(100vh - 100px);
+  height: calc(100vh - 56px);
   font-family: $font-family-monospace;
   direction: ltr; // berow Copy from bootstrap's .form-control
   display: block;

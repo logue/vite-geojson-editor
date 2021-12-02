@@ -87,6 +87,12 @@ const mutations: MutationTree<GeoJsonEditorState> = {
 
 /** Action */
 const actions: ActionTree<GeoJsonEditorState, GeoJsonEditorState> = {
+  setFeatures(
+    context: ActionContext<GeoJsonEditorState, GeoJsonEditorState>,
+    currentGeojson
+  ) {
+    context.commit('setGeoJSON', currentGeojson);
+  },
   fixFeatures(context: ActionContext<GeoJsonEditorState, GeoJsonEditorState>) {
     context.commit(
       'setGeoJSON',
