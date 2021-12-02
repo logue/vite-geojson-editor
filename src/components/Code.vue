@@ -14,7 +14,7 @@ import { codemirror } from 'vue-codemirror';
 import 'codemirror/addon/selection/active-line.js';
 import 'codemirror/mode/javascript/javascript.js';
 
-import lint from '@mapbox/geojsonhint';
+import lint from '@ricerobotics/geojsonhint';
 
 @Component({
   components: {
@@ -83,11 +83,9 @@ export default class CodeArea extends Vue {
 
 <style lang="scss">
 /* stylelint-disable */
-
 // Bootstrap and its default variables
 @import '../node_modules/bootstrap/scss/bootstrap';
-// BootstrapVue and its default variables
-@import '../node_modules/bootstrap-vue/src/index.scss';
+
 /**
  * CodeMirror for Bootstrap
  *
@@ -123,6 +121,7 @@ export default class CodeArea extends Vue {
     background-color: transparent;
     border: 0;
   }
+
   pre {
     // Horizontal padding of content
     padding: 0 4px;
@@ -133,12 +132,14 @@ export default class CodeArea extends Vue {
 
 .CodeMirror-lines {
   padding: 4px 0;
+
   /* Vertical padding around content */
 }
 
 .CodeMirror-scrollbar-filler,
 .CodeMirror-gutter-filler {
   background-color: $white;
+
   /* The little square between H and V scrollbars */
 }
 
@@ -190,7 +191,8 @@ export default class CodeArea extends Vue {
     border: 0 !important;
     background: $green;
   }
-  div.CodeMirror-cursors {
+
+  .CodeMirror-cursors {
     z-index: 1;
   }
 }
@@ -210,9 +212,11 @@ export default class CodeArea extends Vue {
 @keyframes blink {
   0% {
   }
+
   50% {
     background-color: transparent;
   }
+
   100% {
   }
 }
@@ -275,67 +279,87 @@ export default class CodeArea extends Vue {
   .cm-header {
     color: $blue;
   }
+
   .cm-quote {
     color: $green;
   }
+
   .cm-keyword {
     color: $purple;
   }
+
   .cm-atom {
     color: $indigo;
   }
+
   .cm-number {
     color: $green;
   }
+
   .cm-def {
     color: $blue;
   }
+
   .cm-variable,
   .cm-punctuation,
   .cm-property,
   .cm-operator {
     color: $secondary;
   }
+
   .cm-variable-2 {
     color: $cyan;
   }
+
   .cm-variable-3,
   .cm-type {
     color: $green;
   }
+
   .cm-comment {
     color: $teal;
   }
+
   .cm-string {
     color: $pink;
   }
+
   .cm-string-2 {
     color: $orange;
   }
+
   .cm-meta {
     color: $gray-600;
   }
+
   .cm-qualifier {
     color: $dark;
   }
+
   .cm-builtin {
     color: $yellow;
   }
+
   .cm-bracket {
     color: $cyan;
   }
+
   .cm-tag {
     color: $green;
   }
+
   .cm-attribute {
     color: $red;
   }
+
   .cm-hr {
     color: $gray-600;
   }
+
   .cm-link {
     color: $blue;
   }
+
   .cm-error {
     color: $red;
   }
@@ -376,14 +400,18 @@ export default class CodeArea extends Vue {
 
 .CodeMirror-scroll {
   overflow: scroll !important;
+
   /* Things will break if this is overridden */
+
   /* 30px is the magic margin used to hide the element's real scrollbars */
+
   /* See overflow: hidden in .CodeMirror */
   margin-bottom: -30px;
   margin-right: -30px;
   padding-bottom: 30px;
   height: 100%;
   outline: none;
+
   /* Prevent dragging from highlighting the element */
   position: relative;
 }
@@ -451,6 +479,7 @@ export default class CodeArea extends Vue {
   z-index: 4;
   background: none !important;
   border: none !important;
+
   ::selection {
     background-color: transparent;
   }
@@ -472,6 +501,7 @@ export default class CodeArea extends Vue {
 .CodeMirror-lines {
   cursor: text;
   min-height: 1px;
+
   /* prevents collapsing before first draw */
 }
 
@@ -540,6 +570,7 @@ export default class CodeArea extends Vue {
   height: 0;
   overflow: hidden;
   visibility: hidden;
+
   pre {
     position: static;
   }
@@ -574,9 +605,11 @@ export default class CodeArea extends Vue {
   } @else {
     box-shadow: $input-focus-box-shadow;
   }
+
   .CodeMirror-cursors {
     visibility: visible;
   }
+
   .CodeMirror-selected {
     background: $gray-400;
   }
@@ -611,7 +644,7 @@ export default class CodeArea extends Vue {
 
 /* See issue #2901 */
 
-.cm-tab-wrap-hack:after {
+.cm-tab-wrap-hack::after {
   content: '';
 }
 

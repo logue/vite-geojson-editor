@@ -1,35 +1,51 @@
 <template>
   <b-navbar type="dark" variant="dark">
-    <b-navbar-brand href="#">Vite GeoJson Editor</b-navbar-brand>
+    <b-navbar-brand href="#">
+      {{ title }}
+    </b-navbar-brand>
     <b-navbar-nav class="ml-auto">
-      <b-nav-item-dropdown text="Fix" right>
-        <b-dropdown-item
-          :disabled="doesntRequireParseFixing"
-          @click="$store.dispatch('fixFeatures')"
-        >
-          Fix Quotation Marks on Keys
-        </b-dropdown-item>
-        <b-dropdown-item
-          :disabled="doesntRequireWindingFixing"
-          @click="$store.dispatch('rewindFeatures')"
-        >
-          Fix Winding Order
-        </b-dropdown-item>
-      </b-nav-item-dropdown>
-      <b-nav-item-dropdown text="Tools" right>
-        <b-dropdown-item @click="pointsModalOpen = !pointsModalOpen">
-          Create Random Points
-        </b-dropdown-item>
-        <b-dropdown-item @click="zoomTo">Zoom to Features</b-dropdown-item>
-        <b-dropdown-item @click="$store.dispatch('convertFeatures')">
-          Convert Multipart to Singlepart geometries
-        </b-dropdown-item>
-      </b-nav-item-dropdown>
-      <b-nav-form class="mx-3">
-        <b-button class="mr-3" @click="loadDataModal = !loadDataModal">
-          Load from URL
-        </b-button>
-        <b-dropdown right text="Save" variant="primary">
+      <b-nav-form>
+        <b-dropdown right class="mx-2">
+          <template #button-content>
+            <b-icon icon="tools" aria-hidden="true" />
+            Tools
+          </template>
+          <b-dropdown-item @click="loadDataModal = !loadDataModal">
+            <b-icon icon="link45deg" aria-hidden="true" />
+            Load from URL
+          </b-dropdown-item>
+          <b-dropdown-divider />
+          <b-dropdown-item
+            :disabled="doesntRequireParseFixing"
+            @click="$store.dispatch('fixFeatures')"
+          >
+            Fix Quotation Marks on Keys
+          </b-dropdown-item>
+          <b-dropdown-item
+            :disabled="doesntRequireWindingFixing"
+            @click="$store.dispatch('rewindFeatures')"
+          >
+            <b-icon icon="list-ol" aria-hidden="true" />
+            Fix Winding Order
+          </b-dropdown-item>
+          <b-dropdown-divider />
+          <b-dropdown-item @click="pointsModalOpen = !pointsModalOpen">
+            <b-icon icon="geo-alt-fill" aria-hidden="true" />
+            Create Random Points
+          </b-dropdown-item>
+          <b-dropdown-item @click="zoomTo">
+            <b-icon icon="zoom-in" aria-hidden="true" />
+            Zoom to Features
+          </b-dropdown-item>
+          <b-dropdown-item @click="$store.dispatch('convertFeatures')">
+            Convert Multipart to Singlepart geometries
+          </b-dropdown-item>
+        </b-dropdown>
+        <b-dropdown right variant="primary">
+          <template #button-content>
+            <b-icon icon="download" aria-hidden="true" />
+            Save
+          </template>
           <b-dropdown-item
             v-for="format in supportedFormats"
             :key="format.value"
@@ -49,6 +65,7 @@
           v-if="githubUsername === null && !loadingGithubUser"
           @click="signin"
         >
+          <b-icon icon="box-arrow-in-right" aria-hidden="true" />
           Sign in
         </b-nav-item>
         <b-nav-item v-else>
@@ -57,33 +74,103 @@
       </template>
     </b-navbar-nav>
     <b-modal v-model="loadDataModal" title="Load from URL" @ok="loadFromUrl">
-      <b-form-input v-model="remoteUrl" placeholder="Url of geojson" required />
+      <b-input-group>
+        <b-input-group-prepend is-text>
+          <b-icon icon="link" aria-hidden="true" />
+        </b-input-group-prepend>
+        <b-form-input
+          v-model="remoteUrl"
+          placeholder="Url of geojson"
+          required
+        />
+      </b-input-group>
     </b-modal>
     <b-modal
       v-model="pointsModalOpen"
       title="Number of points to create"
+      size="lg"
       @ok="createRandomPoints"
     >
       <b-form-group
         label="Number of points to create"
         label-for="numberOfPoints"
       >
-        <b-form-input
-          id="numberOfPoints"
-          v-model="numberOfPoints"
-          type="number"
-          placeholder="10"
-          required
-        />
+        <b-input-group>
+          <b-input-group-prepend is-text>
+            <b-icon icon="geo-alt-fill" aria-hidden="true" />
+          </b-input-group-prepend>
+          <b-form-input
+            id="numberOfPoints"
+            v-model="numberOfPoints"
+            type="number"
+            placeholder="10"
+            required
+          />
+        </b-input-group>
       </b-form-group>
       <b-form-group label="Bounding box" label-for="bbox">
-        <b-form-input
-          id="bbox"
-          v-model="bbox"
-          type="text"
-          placeholder="-180, -90, 180, 90"
-          required
-        />
+        <b-form-row id="bbox">
+          <b-col>
+            <b-input-group>
+              <b-input-group-prepend is-text>
+                <b-icon icon="arrow-left-short" aria-hidden="true" />
+              </b-input-group-prepend>
+              <b-form-input
+                v-model="bbox[0]"
+                type="number"
+                placeholder="-180"
+                minimum="-180"
+                maximum="180"
+                required
+              />
+            </b-input-group>
+          </b-col>
+          <b-col>
+            <b-input-group>
+              <b-input-group-prepend is-text>
+                <b-icon icon="arrow-up-short" aria-hidden="true" />
+              </b-input-group-prepend>
+              <b-form-input
+                v-model="bbox[1]"
+                type="number"
+                placeholder="-90"
+                minimum="-90"
+                maximum="90"
+                required
+              />
+            </b-input-group>
+          </b-col>
+          <b-col>
+            <b-input-group>
+              <b-input-group-prepend is-text>
+                <b-icon icon="arrow-right-short" aria-hidden="true" />
+              </b-input-group-prepend>
+              <b-form-input
+                v-model="bbox[2]"
+                type="number"
+                placeholder="180"
+                minimum="-180"
+                maximum="180"
+                required
+              />
+            </b-input-group>
+          </b-col>
+          <b-col>
+            <b-input-group>
+              <b-input-group-prepend is-text>
+                <b-icon icon="arrow-down-short" aria-hidden="true" />
+              </b-input-group-prepend>
+              <b-form-input
+                v-model="bbox[3]"
+                type="number"
+                placeholder="90"
+                minimum="-90"
+                maximum="90"
+                required
+              />
+            </b-input-group>
+          </b-col>
+        </b-form-row>
       </b-form-group>
     </b-modal>
   </b-navbar>
@@ -96,9 +183,11 @@ import { topology } from 'topojson-server';
 import wkt from 'wellknown';
 import shape from 'shp-write';
 import axios from 'axios';
-import lint from '@mapbox/geojsonhint';
-import { zoomToFeatures } from '../controllers/leafletMap';
+import lint from '@ricerobotics/geojsonhint';
 import { randomPoint } from '@turf/random';
+import type { BBox } from '@turf/helpers';
+
+import { zoomToFeatures } from '../controllers/leafletMap';
 
 @Component
 /** HelloWorld Component */
@@ -106,10 +195,11 @@ export default class NaviBar extends Vue {
   loadDataModal = false;
   creatingGist = false;
   remoteUrl = '';
+  title = import.meta.env.VITE_APP_TITLE || 'Vite GeoJson Editor';
 
   pointsModalOpen = false;
   numberOfPoints = 10;
-  bbox = '-180, -90, 180, 90';
+  bbox: BBox = [-180, -90, 180, 90];
 
   @Prop()
   loadingGithubUser = false;
@@ -174,9 +264,8 @@ export default class NaviBar extends Vue {
   }
 
   createRandomPoints() {
-    if (this.bbox.split(',').length - 1 !== 3) this.bbox = '-180, -90, 180, 90';
     const newPoints = randomPoint(this.numberOfPoints, {
-      bbox: JSON.parse('[' + this.bbox + ']'),
+      bbox: this.bbox,
     });
     this.$store.commit('setGeoJSON', {
       type: 'FeatureCollection',

@@ -27,7 +27,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@mapbox/geojsonhint": "^2.1.0",
+    "@ricerobotics/geojsonhint": "^3.0.1",
     "@turf/flatten": "^6.5.0",
     "@turf/random": "^6.5.0",
     "@turf/rewind": "^6.5.0",
@@ -66,6 +66,7 @@
     "prettier": "^2.5.0",
     "sass": "1.32.13",
     "stylelint": "^14.1.0",
+    "stylelint-config-prettier": "^9.0.3",
     "stylelint-config-recommended-scss": "^5.0.2",
     "stylelint-config-recommended-vue": "^1.1.0",
     "stylelint-config-standard": "^24.0.0",

@@ -36,7 +36,25 @@ export function createMap() {
     return ret;
   };
 
-  map = L.map('map').setView([vars().lat, vars().lng], vars().zoom);
+  map = L.map('map', {
+    center: [vars().lat, vars().lng],
+    zoom: vars().zoom,
+    zoomControl: true,
+    maxZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 19,
+    minZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 0,
+    maxBounds: [
+      // South-West
+      [
+        import.meta.env.VITE_MAP_EXTENT_MIN_LATITUDE || -90,
+        import.meta.env.VITE_MAP_EXTENT_MIN_LONGITUDE || -180,
+      ],
+      // North-East
+      [
+        import.meta.env.VITE_MAP_EXTENT_MAX_LATITUDE || 90,
+        import.meta.env.VITE_MAP_EXTENT_MAX_LONGITUDE || 180,
+      ],
+    ],
+  });
 
   L.tileLayer(
     import.meta.env.VITE_MAP_TILE_ZXY_URI ||
@@ -46,24 +64,8 @@ export function createMap() {
         import.meta.env.VITE_MAP_ATTRIBUTION ||
         '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
       subdomains: import.meta.env.VITE_MAP_SUBDOMAINS || 'abcd',
-      maxZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 19,
-      minZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 0,
-      crs: L.CRS.Simple,
     }
   ).addTo(map);
-
-  /*
-  if (import.meta.env.VITE_MAP_BOUNDING) {
-    map.setMaxBounds(
-      new L.LatLngBounds(
-        // South-West
-        [VITE_MAP_EXTENT_MAX_LATITUDE, VITE_MAP_EXTENT_MIN_LONGITUDE],
-        // North-East
-        [VITE_MAP_EXTENT_MIN_LATITUDE, VITE_MAP_EXTENT_MAX_LONGITUDE]
-      )
-    );
-  }
-  */
 
   drawnItems = L.geoJSON(null, {
     style() {
