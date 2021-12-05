@@ -10,6 +10,10 @@
             <b-icon icon="tools" aria-hidden="true" />
             Tools
           </template>
+          <b-dropdown-item @click="loadFileModal = !loadFileModal">
+            <b-icon icon="file-earmark-code-fill" aria-hidden="true" />
+            Load from file
+          </b-dropdown-item>
           <b-dropdown-item @click="loadDataModal = !loadDataModal">
             <b-icon icon="link45deg" aria-hidden="true" />
             Load from URL
@@ -45,6 +49,7 @@
           <template #button-content>
             <b-icon icon="download" aria-hidden="true" />
             Save
+            <b-badge variant="light">{{ featureCount }}</b-badge>
           </template>
           <b-dropdown-item
             v-for="format in supportedFormats"
@@ -81,6 +86,19 @@
         <b-form-input
           v-model="remoteUrl"
           placeholder="Url of geojson"
+          required
+        />
+      </b-input-group>
+    </b-modal>
+    <b-modal v-model="loadFileModal" title="Load from URL" @ok="loadFromFile">
+      <b-input-group>
+        <b-input-group-prepend is-text>
+          <b-icon icon="file-earmark-code-fill" aria-hidden="true" />
+        </b-input-group-prepend>
+        <b-form-file
+          v-model="localFile"
+          accept="application/geo+json"
+          placeholder="File of geojson"
           required
         />
       </b-input-group>
@@ -177,7 +195,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import FileSaver from 'file-saver';
 import { topology } from 'topojson-server';
 import wkt from 'wellknown';
@@ -193,15 +211,16 @@ import { zoomToFeatures } from '../controllers/leafletMap';
 /** HelloWorld Component */
 export default class NaviBar extends Vue {
   loadDataModal = false;
+  loadFileModal = false;
   creatingGist = false;
-  remoteUrl = '';
+  remoteUrl = null;
+  localFile: File = null;
   title = import.meta.env.VITE_APP_TITLE || 'Vite GeoJson Editor';
 
   pointsModalOpen = false;
   numberOfPoints = 10;
   bbox: BBox = [-180, -90, 180, 90];
 
-  @Prop()
   loadingGithubUser = false;
 
   get githubClientId() {
@@ -237,23 +256,33 @@ export default class NaviBar extends Vue {
   get supportedFormats() {
     return [
       {
+        label: 'GeoJSON',
+        value: 'geojson',
+        mime: 'application/geo+json',
+        disabled: false,
+      },
+      {
         label: 'Shapefile',
         value: 'shp',
+        mime: 'x-gis/x-shapefile',
         disabled: false,
       },
       {
         label: 'TopoJSON',
         value: 'topojson',
+        mime: 'application/json',
         disabled: false,
       },
       {
         label: 'WKT',
         value: 'wkt',
+        mime: 'text/plain',
         disabled: false,
       },
       {
         label: 'Github Gist',
         value: 'gist',
+        mime: null,
         disabled: !this.githubAccessToken,
       },
     ];
@@ -297,6 +326,10 @@ export default class NaviBar extends Vue {
       }
       this.$store.commit('setGeoJSON', response.data);
       zoomToFeatures();
+      this.$bvToast.toast('The specified file could be parsed as geojson', {
+        title: 'Geojson has been loaded.',
+        variant: 'primary',
+      });
     } catch (error) {
       this.$bvToast.toast('File could not be retrieved from specified url', {
         title: 'Could not retrieve file',
@@ -305,15 +338,24 @@ export default class NaviBar extends Vue {
     }
   }
 
-  saveToGeojson() {
-    const file = new File(
-      [this.$store.state.geojsonString],
-      'exported.geojson',
-      {
-        type: 'application/geo+json;charset=utf-8',
-      }
-    );
-    FileSaver.saveAs(file);
+  async loadFromFile() {
+    if (!this.localFile) {
+      this.$bvToast.toast('File doees not selected.', {
+        title: 'Could not retrieve file',
+        variant: 'danger',
+      });
+      return;
+    }
+    const reader = new FileReader();
+    reader.readAsText(this.localFile);
+    reader.onload = () => {
+      this.$store.commit('setGeoJSON', reader.result);
+      zoomToFeatures();
+      this.$bvToast.toast('The specified file could be parsed as geojson', {
+        title: 'Geojson has been loaded.',
+        variant: 'primary',
+      });
+    };
   }
 
   async createShare() {
@@ -365,35 +407,43 @@ export default class NaviBar extends Vue {
   async saveInFormats(e) {
     let outData = null;
     const outName = e;
-    if (e === 'gist') {
-      const r = await this.createGist();
-      this.$bvToast.toast(r.data.id, {
-        title: 'Gist created',
-        solid: true,
-      });
-      return;
+    switch (e) {
+      case 'gist': {
+        const r = await this.createGist();
+        this.$bvToast.toast(r.data.id, {
+          title: 'Gist created',
+          solid: true,
+        });
+        return;
+      }
+      case 'shp': {
+        shape.download(this.$store.getters.geojson, {
+          folder: 'myshapes',
+          types: {
+            point: 'mypoints',
+            polygon: 'mypolygons',
+            line: 'mylines',
+          },
+        });
+        return;
+      }
+      case 'topojson': {
+        outData = topology(this.$store.getters.geojson.features);
+        break;
+      }
+      case 'wkt': {
+        outData = wkt.stringify({
+          type: 'GeometryCollection',
+          geometries: this.$store.getters.geojson.features.map(f => f.geometry),
+        });
+        break;
+      }
+      default: {
+        outData = JSON.parse(this.$store.state.geojsonString);
+        break;
+      }
     }
-    if (e === 'topojson') {
-      outData = topology(this.$store.getters.geojson.features);
-    }
-    if (e === 'wkt') {
-      outData = wkt.stringify({
-        type: 'GeometryCollection',
-        geometries: this.$store.getters.geojson.features.map(f => f.geometry),
-      });
-    }
-    if (e === 'shp') {
-      const options = {
-        folder: 'myshapes',
-        types: {
-          point: 'mypoints',
-          polygon: 'mypolygons',
-          line: 'mylines',
-        },
-      };
-      shape.download(this.$store.getters.geojson, options);
-      return;
-    }
+
     const file = new File([JSON.stringify(outData)], `export.${outName}`, {
       type: 'text/plain;charset=utf-8',
     });

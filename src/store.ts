@@ -1,6 +1,5 @@
 // Vuex Store
 import flatten from '@turf/flatten';
-import { randomPoint } from '@turf/random';
 import rewind from '@turf/rewind';
 import Vue from 'vue';
 import Vuex, {
@@ -50,6 +49,8 @@ const getters: GetterTree<GeoJsonEditorState, GeoJsonEditorState> = {
     if (gj.type === 'Feature' || gj.type === 'Geometry') return 1;
     return 0;
   },
+  propertey: (s: GeoJsonEditorState): Record<string, any> =>
+    s.selectedProperties,
 };
 
 /** Mutation */
@@ -67,7 +68,7 @@ const mutations: MutationTree<GeoJsonEditorState> = {
     // modifyJSON()
   },
   setSelectedProperties(s, feature) {
-    s.selectedProperties = feature.properties;
+    s.selectedProperties = feature.properties || null;
     // highlightSelectedFeatureInCodeArea(feature, state.geojsonString)
   },
   setRequiresParsingFix(s, bool) {
@@ -114,14 +115,6 @@ const actions: ActionTree<GeoJsonEditorState, GeoJsonEditorState> = {
   "type": "FeatureCollection",
   "features": []
 }`
-    );
-  },
-  randomFeatures(
-    context: ActionContext<GeoJsonEditorState, GeoJsonEditorState>
-  ) {
-    context.commit(
-      'setGeoJSON',
-      randomPoint(25, { bbox: [-180, -90, 180, 90] })
     );
   },
   convertFeatures(

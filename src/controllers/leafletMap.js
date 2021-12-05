@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import RasterCoords from 'leaflet-rastercoords';
 import 'leaflet/dist/leaflet.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import marker2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -36,25 +37,33 @@ export function createMap() {
     return ret;
   };
 
-  map = L.map('map', {
+  const options = {
     center: [vars().lat, vars().lng],
     zoom: vars().zoom,
     zoomControl: true,
     maxZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 19,
     minZoom: import.meta.env.VITE_MAP_MAX_ZOOM || 0,
-    maxBounds: [
-      // South-West
-      [
-        import.meta.env.VITE_MAP_EXTENT_MIN_LATITUDE || -90,
-        import.meta.env.VITE_MAP_EXTENT_MIN_LONGITUDE || -180,
-      ],
-      // North-East
-      [
-        import.meta.env.VITE_MAP_EXTENT_MAX_LATITUDE || 90,
-        import.meta.env.VITE_MAP_EXTENT_MAX_LONGITUDE || 180,
-      ],
-    ],
-  });
+  };
+
+  if (import.meta.env.VITE_MAP_IS_RASTER === true) {
+    options.crs = L.CRS.Simple;
+
+    if (!import.meta.env.VITE_MAP_WIDTH || !import.meta.env.VITE_MAP_HEIGHT) {
+      throw new Error(
+        'Raster image mode must be set map VITE_MAP_WIDTH and VITE_MAP_HEIGHT.'
+      );
+    }
+  }
+
+  map = L.map('map', options);
+
+  if (import.meta.env.VITE_MAP_IS_RASTER === true) {
+    const rc = new RasterCoords(map, [
+      import.meta.env.VITE_MAP_WIDTH,
+      import.meta.env.VITE_MAP_HEIGHT,
+    ]);
+    map.setMaxZoom(rc.zoomLevel());
+  }
 
   L.tileLayer(
     import.meta.env.VITE_MAP_TILE_ZXY_URI ||
@@ -67,10 +76,14 @@ export function createMap() {
     }
   ).addTo(map);
 
+  if (import.meta.env.VITE_MAP_LIMIT_BOUNDS === true) {
+    map.setMaxBounds(getBounds());
+  }
+
   drawnItems = L.geoJSON(null, {
     style() {
       return {
-        color: '#007bff',
+        color: import.meta.env.VITE_MAP_FEATURE_COLOR || '#6c757d',
       };
     },
   }).addTo(map);
@@ -122,18 +135,41 @@ export function createMap() {
   });
 }
 
+export function getBounds() {
+  if (import.meta.env.VITE_MAP_IS_RASTER === true) {
+    const rc = new RasterCoords(map, [
+      import.meta.env.VITE_MAP_WIDTH,
+      import.meta.env.VITE_MAP_HEIGHT,
+    ]);
+    return rc.getMaxBounds();
+  } else {
+    return [
+      // South-West
+      [
+        import.meta.env.VITE_MAP_MIN_LATITUDE || -90,
+        import.meta.env.VITE_MAP_MIN_LONGITUDE || -180,
+      ],
+      // North-East
+      [
+        import.meta.env.VITE_MAP_MAX_LATITUDE || 90,
+        import.meta.env.VITE_MAP_MAX_LONGITUDE || 180,
+      ],
+    ];
+  }
+}
+
 let lastSelectedFeature = null;
 
 function highlightSelectedFeature() {
   lastSelectedFeature.setStyle({
-    color: '#ffc107',
+    color: import.meta.env.VITE_MAP_FEATURE_SELECTED || '#0d6efd',
   });
 }
 
 function resetStyleOfPreviousSelection() {
   if (lastSelectedFeature === null) return;
   lastSelectedFeature.setStyle({
-    color: '#666C79',
+    color: import.meta.env.VITE_MAP_FEATURE_COLOR || '#6c757d',
   });
 }
 
@@ -145,6 +181,7 @@ function openPopup(e) {
   L.DomEvent.stop(e);
   resetStyleOfPreviousSelection();
   lastSelectedFeature = e.target;
+  console.log(lastSelectedFeature);
   highlightSelectedFeature();
   store.commit('setSelectedProperties', lastSelectedFeature.feature);
 }

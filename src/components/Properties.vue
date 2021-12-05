@@ -1,9 +1,8 @@
 <template>
-  <div
-    v-if="selectedProperties !== null"
-    class="feature-properties leaflet-bar"
-  >
-    <b-table striped hover :fields="fields" :items="tableProperties" />
+  <div v-if="selectedProperties !== null">
+    <b-table striped hover :fields="fields" :items="tableProperties">
+      <template #table-caption>Property</template>
+    </b-table>
   </div>
 </template>
 

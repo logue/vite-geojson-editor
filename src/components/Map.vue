@@ -5,11 +5,22 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import { createMap } from './../controllers/leafletMap';
 
 @Component
 export default class LeafletMap extends Vue {
+  modal = false;
+
+  get propertey() {
+    return this.$store.getters.propertey;
+  }
+
+  @Watch('propertey')
+  onProperteyChanged() {
+    console.log(this.propertey);
+  }
+
   mounted() {
     createMap();
   }
@@ -25,7 +36,7 @@ export default class LeafletMap extends Vue {
   position: absolute;
   color: var(--orange);
   z-index: 1000;
-  bottom: 0;
-  left: 0.5rem;
+  top: 0.5rem;
+  left: 3rem;
 }
 </style>

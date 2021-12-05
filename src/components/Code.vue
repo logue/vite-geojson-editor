@@ -15,6 +15,7 @@ import 'codemirror/addon/selection/active-line.js';
 import 'codemirror/mode/javascript/javascript.js';
 
 import lint from '@ricerobotics/geojsonhint';
+import gp from 'geojson-precision';
 
 @Component({
   components: {
@@ -59,8 +60,16 @@ export default class CodeArea extends Vue {
 
     if (this.errors.length === 0) {
       const newGeoJSON = JSON.parse(newGeojsonString);
+
       modifyGeoJSON(newGeoJSON);
-      this.$store.commit('setGeoJSON', newGeoJSON);
+      if (import.meta.env.VITE_MAP_PRECISION) {
+        this.$store.commit(
+          'setGeoJSON',
+          gp.parse(newGeoJSON, import.meta.env.VITE_MAP_PRECISION)
+        );
+      } else {
+        this.$store.commit('setGeoJSON', newGeoJSON);
+      }
     }
     this.markErrors();
   }
